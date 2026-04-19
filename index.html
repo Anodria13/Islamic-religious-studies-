@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net;
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com;
+               font-src 'self' https://fonts.gstatic.com;
+               media-src https: data: *;
+               img-src 'self' data: https:;
+               connect-src 'self' https://api.aladhan.com
+                 https://mp3quran.net https://*.mp3quran.net https://api.alquran.cloud
+                 https://quranenc.com https://download.quranicaudio.com
+                 https://api.qurancdn.com https://raw.githubusercontent.com
+                 https://cdn.jsdelivr.net https://data-rosy.vercel.app
+                 https://*.radiojar.com https://api.radiojar.com
+                 https://cdn.islamic.network;">
+    <title>إسلاميات - تطبيق إسلامي شامل</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body class="bg-[#F2F9F6] text-[#041A12] font-['Cairo'] transition-colors duration-300 dark:bg-[#0A1A12] dark:text-[#C8E6D5]">
+    
+    <!-- Top Bar -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#0F2018]/80 backdrop-blur-xl border-b border-black/5 px-4 py-3 flex items-center justify-between">
+        <h1 id="app-title" class="text-xl font-extrabold text-[#006948] dark:text-[#68DBA9]">إسلاميات</h1>
+        <div class="flex items-center gap-3">
+            <button id="theme-toggle" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[#006948] dark:text-[#68DBA9]">
+                <i data-lucide="moon" class="w-6 h-6 dark:hidden"></i>
+                <i data-lucide="sun" class="w-6 h-6 hidden dark:block"></i>
+            </button>
+            <button id="lang-toggle" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[#006948] dark:text-[#68DBA9] font-bold">
+                EN
+            </button>
+            <button id="settings-toggle" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[#006948] dark:text-[#68DBA9]">
+                <i data-lucide="settings" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 pt-20 pb-40 min-h-screen">
+        
+        <!-- Prayer Tab -->
+        <section id="tab-prayer" class="tab-content space-y-6">
+            <div id="prayer-loading" class="flex justify-center py-20 hidden">
+                <i data-lucide="loader-2" class="w-12 h-12 text-[#006948] animate-spin"></i>
+            </div>
+            <div id="prayer-content" class="space-y-6">
+                <!-- Location Search -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex gap-3">
+                        <button id="location-btn" class="p-4 bg-[#006948]/10 dark:bg-white/10 text-[#006948] dark:text-[#68DBA9] rounded-2xl">
+                            <i data-lucide="navigation" class="w-6 h-6 rotate-45"></i>
+                        </button>
+                        <div class="flex-1 relative">
+                            <input type="text" id="city-input" placeholder="البحث عن مدينة..." class="w-full bg-white dark:bg-[#162B1E] border border-black/5 rounded-2xl py-4 px-6 focus:ring-2 focus:ring-[#006948]/20 transition-all font-bold shadow-sm">
+                            <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-30"></i>
+                        </div>
+                    </div>
+                    <div id="location-info" class="px-2 text-[10px] items-baseline gap-1 opacity-40 font-black uppercase tracking-widest hidden">
+                        <i data-lucide="map-pin" class="w-3 h-3 inline"></i>
+                        <span id="location-city-name">-</span>, <span id="location-country-name">-</span>
+                    </div>
+                </div>
+
+                <!-- Next Prayer Card -->
+                <div id="next-prayer-card" class="bg-[#006948] rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group hidden">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="inline-block bg-white/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md">الصلاة القادمة</div>
+                            <div id="hijri-date-badge" class="font-['Amiri'] text-lg opacity-80">-- --- ----</div>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <div>
+                                <h3 id="next-prayer-name" class="text-5xl font-black mb-2">-</h3>
+                                <div class="flex items-baseline gap-2">
+                                    <span id="next-prayer-time" class="text-7xl font-black">-</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="flex items-center gap-3 bg-black/10 px-6 py-3 rounded-2xl backdrop-blur-xl border border-white/5">
+                                    <i data-lucide="timer" class="w-5 h-5 animate-pulse text-[#D4AF37]"></i>
+                                    <span id="next-prayer-remaining" class="text-2xl font-black">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timings Grid -->
+                <div id="prayer-grid" class="grid grid-cols-2 gap-4">
+                    <!-- Cards injected by JS -->
+                </div>
+
+                <!-- Prayer Sub-Tabs -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-8">
+                    <button onclick="openNamesOfAllah()" class="flex flex-col items-center gap-2 p-4 bg-white dark:bg-[#162B1E] rounded-2xl border border-black/5">
+                        <i data-lucide="sun" class="w-6 h-6 text-[#006948]"></i>
+                        <span class="text-xs font-bold">أسماء الله</span>
+                    </button>
+                    <button onclick="openQibla()" class="flex flex-col items-center gap-2 p-4 bg-white dark:bg-[#162B1E] rounded-2xl border border-black/5">
+                        <i data-lucide="compass" class="w-6 h-6 text-[#006948]"></i>
+                        <span class="text-xs font-bold">القبلة</span>
+                    </button>
+                    <button onclick="openCalendar()" class="flex flex-col items-center gap-2 p-4 bg-white dark:bg-[#162B1E] rounded-2xl border border-black/5">
+                        <i data-lucide="calendar" class="w-6 h-6 text-[#006948]"></i>
+                        <span class="text-xs font-bold">التقويم</span>
+                    </button>
+                    <button id="hijri-btn" class="flex flex-col items-center gap-2 p-4 bg-white dark:bg-[#162B1E] rounded-2xl border border-black/5">
+                        <i data-lucide="calendar-days" class="w-6 h-6 text-[#006948]"></i>
+                        <span id="hijri-date-top" class="text-xs font-bold">-</span>
+                    </button>
+                </div>
+            </div>
+
+                <!-- Names of Allah View -->
+            <div id="names-view" class="fixed inset-0 z-[70] bg-[#FDFCF8] dark:bg-[#0A1410] hidden flex flex-col p-4">
+                <div class="flex items-center justify-between mb-8 px-2 pt-4">
+                    <button onclick="closeNamesOfAllah()" class="p-3 bg-white dark:bg-[#162B1E] rounded-2xl shadow-sm border border-black/5"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                    <h2 class="text-2xl font-black">أسماء الله الحسنى</h2>
+                    <div class="w-12"></div>
+                </div>
+                <div id="names-list" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-6 pb-20 px-2 lg:px-4">
+                    <!-- Names injected by JS -->
+                </div>
+            </div>
+
+            <!-- Qibla View -->
+            <div id="qibla-view" class="fixed inset-0 z-[70] bg-[#F2F9F6] dark:bg-[#0A1A12] hidden flex flex-col p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="closeQibla()" class="p-2 bg-black/5 rounded-xl"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                    <h2 class="text-xl font-black">القبلة</h2>
+                    <div></div>
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center space-y-10">
+                    <div class="relative w-64 h-64 flex items-center justify-center">
+                        <div id="qibla-compass" class="absolute inset-0 transition-transform duration-500">
+                             <i data-lucide="compass" class="w-full h-full text-[#006948]/10"></i>
+                             <div id="qibla-needle" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-48 bg-[#006948] rounded-full origin-center"></div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p id="qibla-deg" class="text-2xl font-black">-</p>
+                        <p class="opacity-40">وجه هاتفك نحو القبلة</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quran Tab -->
+        <section id="tab-quran" class="tab-content hidden space-y-6">
+            <div class="flex gap-2">
+                <div class="flex-1 relative">
+                    <input type="text" id="surah-search" placeholder="ابحث عن سورة..." class="w-full bg-white dark:bg-[#162B1E] border border-black/5 rounded-2xl py-4 px-6 font-bold shadow-sm">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-30"></i>
+                </div>
+                <button id="reciter-dropdown-btn" class="px-6 py-4 bg-white dark:bg-[#162B1E] border border-black/5 rounded-2xl font-bold flex items-center gap-2 max-w-[150px]">
+                    <span class="truncate" id="current-reciter-name">مشاري</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div id="surah-list" class="space-y-4">
+                <!-- Surahs injected by JS -->
+            </div>
+
+            <div id="surah-detail" class="fixed inset-0 z-50 bg-[#F2F9F6] dark:bg-[#0A1A12] hidden flex flex-col p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <button id="close-surah" class="p-2 bg-black/5 rounded-xl"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                    <div class="text-center">
+                        <h2 id="surah-detail-title" class="text-xl font-black">سورة</h2>
+                        <div class="flex gap-2 justify-center mt-1">
+                            <button onclick="changeFontSize(-2)" class="text-[10px] opacity-40">A-</button>
+                            <button onclick="changeFontSize(2)" class="text-[10px] opacity-40">A+</button>
+                        </div>
+                    </div>
+                    <button id="share-surah" class="p-2 bg-black/5 rounded-xl"><i data-lucide="share-2" class="w-6 h-6"></i></button>
+                </div>
+                <div id="ayah-list" class="flex-1 overflow-y-auto space-y-6 pb-20 px-2 quran-container">
+                    <!-- Ayahs injected by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Radio Tab -->
+        <section id="tab-radio" class="tab-content hidden space-y-6">
+            <div class="flex gap-2 relative">
+                <input type="text" id="radio-search" placeholder="ابحث عن إذاعة..." class="w-full bg-white dark:bg-[#162B1E] border border-black/5 rounded-2xl py-4 px-6 font-bold shadow-sm">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-30"></i>
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-2 hide-scrollbar" id="radio-tabs">
+                <button onclick="setRadioCat('reciter')" class="radio-tab-btn active px-6 py-2 rounded-full font-bold whitespace-nowrap bg-[#006948] text-white">القراء</button>
+                <button onclick="setRadioCat('channel')" class="radio-tab-btn px-6 py-2 rounded-full font-bold whitespace-nowrap bg-white border border-black/5">قنوات الراديو</button>
+                <button onclick="setRadioCat('azkar')" class="radio-tab-btn px-6 py-2 rounded-full font-bold whitespace-nowrap bg-white border border-black/5">أذكار ورقية</button>
+                <button onclick="setRadioCat('tafsir')" class="radio-tab-btn px-6 py-2 rounded-full font-bold whitespace-nowrap bg-white border border-black/5">تفسير وفتاوى</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="radio-list">
+                <!-- Radios injected by JS -->
+            </div>
+        </section>
+
+        <!-- Azkar Tab -->
+        <section id="tab-azkar" class="tab-content hidden space-y-6">
+            <div class="relative">
+                <button id="azkar-cats-btn" class="w-full bg-white dark:bg-[#162B1E] p-6 rounded-3xl border border-black/5 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <i data-lucide="book-open" class="w-6 h-6 text-[#006948]"></i>
+                        <div class="text-right">
+                            <span class="text-xs opacity-40 block">الأقسام</span>
+                            <span id="active-category-name" class="text-xl font-black">أذكار الصباح</span>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-6 h-6"></i>
+                </button>
+                <div id="azkar-cats-modal" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#162B1E] border border-black/5 rounded-3xl shadow-2xl z-20 max-h-[50vh] overflow-y-auto hidden p-4">
+                    <!-- Cats injected by JS -->
+                </div>
+            </div>
+            <div id="azkar-list" class="space-y-6">
+                <!-- Azkar injected by JS -->
+            </div>
+        </section>
+
+        <!-- Hadith Tab -->
+        <section id="tab-hadith" class="tab-content hidden space-y-6">
+            <div class="flex justify-between items-center mb-2">
+                <div class="flex gap-2">
+                    <button onclick="changeFontSize(-2)" class="p-2 bg-white dark:bg-[#162B1E] rounded-lg border border-black/5 font-bold">A-</button>
+                    <button onclick="changeFontSize(2)" class="p-2 bg-white dark:bg-[#162B1E] rounded-lg border border-black/5 font-bold">A+</button>
+                </div>
+                <button id="share-hadith" class="p-2 bg-white dark:bg-[#162B1E] rounded-lg border border-black/5"><i data-lucide="share-2" class="w-5 h-5"></i></button>
+            </div>
+            <div class="bg-white dark:bg-[#162B1E] rounded-[2.5rem] p-8 sm:p-12 shadow-xl border border-black/5 min-h-[400px] flex flex-col items-center justify-center text-center relative overflow-hidden">
+                <div class="bg-[#006948]/10 px-6 py-2 rounded-full mb-8">
+                    <span class="text-[#006948] font-black">الأربعون النووية</span>
+                </div>
+                <div class="flex-1 flex flex-col justify-center">
+                    <p id="hadith-text" class="text-3xl font-['Amiri'] leading-relaxed text-[#006948] dark:text-[#68DBA9]">-</p>
+                </div>
+                <div class="flex gap-4 mt-10">
+                    <button id="prev-hadith" class="p-4 bg-black/5 rounded-2xl"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                    <button id="next-hadith" class="p-4 bg-black/5 rounded-2xl"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Audio Player -->
+    <div id="mini-player" class="fixed bottom-24 left-4 right-4 bg-white/90 dark:bg-[#162B1E]/90 backdrop-blur-xl border border-black/5 rounded-3xl p-4 shadow-2xl z-40 hidden flex items-center justify-between">
+        <div class="flex items-center gap-3 overflow-hidden">
+            <div class="w-12 h-12 bg-[#006948]/10 rounded-2xl flex items-center justify-center animate-pulse">
+                <i data-lucide="music" class="w-6 h-6 text-[#006948]"></i>
+            </div>
+            <div class="truncate">
+                <p id="player-title" class="font-black truncate">اختر تلاوة...</p>
+                <p id="player-subtitle" class="text-xs opacity-40">جارِ التشغيل</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="player-play-btn" class="w-12 h-12 bg-[#006948] text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                <i data-lucide="play" class="w-6 h-6 fill-white"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#0F2018]/95 backdrop-blur-2xl border-t border-black/5 px-6 pt-3 pb-8 flex items-center justify-around">
+        <button data-tab="prayer" class="nav-btn flex flex-col items-center gap-1 text-[#006948]">
+            <i data-lucide="clock" class="w-6 h-6"></i>
+            <span class="text-[10px] font-bold">الصلاة</span>
+        </button>
+        <button data-tab="quran" class="nav-btn flex flex-col items-center gap-1 opacity-40">
+            <i data-lucide="book-open" class="w-6 h-6"></i>
+            <span class="text-[10px] font-bold">القرآن</span>
+        </button>
+        <button data-tab="azkar" class="nav-btn flex flex-col items-center gap-1 opacity-40">
+            <i data-lucide="heart" class="w-6 h-6"></i>
+            <span class="text-[10px] font-bold">الأذكار</span>
+        </button>
+        <button data-tab="hadith" class="nav-btn flex flex-col items-center gap-1 opacity-40">
+            <i data-lucide="moon" class="w-6 h-6"></i>
+            <span class="text-[10px] font-bold">الأحاديث</span>
+        </button>
+        <button data-tab="radio" class="nav-btn flex flex-col items-center gap-1 opacity-40">
+            <i data-lucide="radio" class="w-6 h-6"></i>
+            <span class="text-[10px] font-bold">الراديو</span>
+        </button>
+    </nav>
+
+    <!-- Reciter Modal -->
+    <div id="reciter-modal" class="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#0F2018] rounded-[2.5rem] w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-black/5">
+                <input type="text" id="reciter-search" placeholder="ابحث عن قارئ..." class="w-full bg-black/5 dark:bg-white/5 rounded-xl py-3 px-4 font-bold outline-none">
+            </div>
+            <div id="reciter-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <!-- Reciters injected by JS -->
+            </div>
+            <div class="p-4 border-t border-black/5 flex justify-center">
+                <button id="close-reciter" class="text-sm font-bold opacity-40">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Audio Elements -->
+    <audio id="global-audio" preload="none"></audio>
+
+    <script src="script.js"></script>
+    <script>
+        // Initialize icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
