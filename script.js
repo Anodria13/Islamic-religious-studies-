@@ -115,10 +115,10 @@ function switchTab(tabId) {
         const id = btn.getAttribute('data-tab');
         if (id === tabId) {
             btn.classList.remove('opacity-40');
-            btn.classList.add('text-[#059669]');
+            btn.classList.add('text-[#0A5239]');
         } else {
             btn.classList.add('opacity-40');
-            btn.classList.remove('text-[#059669]');
+            btn.classList.remove('text-[#0A5239]');
         }
     });
 
@@ -176,11 +176,11 @@ function renderPrayerGrid(timings) {
 
     grid.innerHTML = prayers.map(p => `
         <div class="premium-card p-8 flex flex-col items-center justify-center text-center">
-            <div class="w-12 h-12 bg-[#059669]/5 rounded-2xl flex items-center justify-center mb-4">
-                <i data-lucide="${p.icon}" class="w-6 h-6 text-[#059669]"></i>
+            <div class="w-12 h-12 bg-[#0A5239]/5 rounded-2xl flex items-center justify-center mb-4">
+                <i data-lucide="${p.icon}" class="w-6 h-6 text-[#0A5239]"></i>
             </div>
             <span class="text-xs font-black opacity-40 uppercase tracking-widest mb-1">${state.language === 'en' ? p.en : p.name}</span>
-            <div class="text-3xl font-black text-[#059669] dark:text-[#34D399]">${formatTime(timings[p.key])}</div>
+            <div class="text-3xl font-black text-[#0A5239] dark:text-[#D4AF37]">${formatTime(timings[p.key])}</div>
         </div>
     `).join('');
     lucide.createIcons();
@@ -264,10 +264,10 @@ async function openNamesOfAllah() {
 function renderNames() {
     const list = document.getElementById('names-list');
     list.innerHTML = state.names.map(n => `
-        <div class="premium-card p-6 flex flex-col items-center text-center group cursor-default">
-            <span class="text-[10px] opacity-20 font-black mb-4 group-hover:opacity-100 transition-opacity">#${n.number}</span>
-            <h3 class="text-3xl font-black text-[#059669] dark:text-[#34D399] font-['Amiri'] mb-3">${n.name}</h3>
-            <p class="text-[11px] font-bold opacity-40 leading-relaxed">${n.en.meaning}</p>
+        <div class="premium-card p-3 sm:p-5 flex flex-col items-center justify-center text-center group cursor-default min-h-[110px] sm:min-h-[130px]">
+            <span class="text-[10px] sm:text-xs opacity-40 font-bold mb-1 sm:mb-2 group-hover:opacity-100 transition-opacity">#${n.number}</span>
+            <h3 class="text-2xl sm:text-3xl font-bold text-[#0A5239] dark:text-[#D4AF37] font-['Amiri'] leading-relaxed py-1">${n.name}</h3>
+            <p class="text-[9px] sm:text-[11px] font-bold opacity-60 mt-1 leading-snug px-1 text-balance">${n.en.meaning}</p>
         </div>
     `).join('');
 }
@@ -354,9 +354,9 @@ function renderSurahs() {
         .map(s => `
             <div onclick="openSurah(${s.number})" class="premium-card p-6 flex items-center justify-between cursor-pointer group">
                 <div class="flex items-center gap-5">
-                    <div class="w-14 h-14 bg-[#059669]/5 rounded-[1.25rem] flex items-center justify-center font-black text-[#059669] transition-all group-hover:bg-[#059669] group-hover:text-white">${s.number}</div>
+                    <div class="w-14 h-14 bg-[#0A5239]/5 rounded-[1.25rem] flex items-center justify-center font-black text-[#0A5239] transition-all group-hover:bg-[#0A5239] group-hover:text-white">${s.number}</div>
                     <div class="text-right">
-                        <h3 class="font-extrabold text-xl mb-1 group-hover:text-[#059669] transition-colors">${s.name}</h3>
+                        <h3 class="font-extrabold text-xl mb-1 group-hover:text-[#0A5239] transition-colors">${s.name}</h3>
                         <div class="flex items-center gap-2 opacity-40 text-[10px] font-black uppercase tracking-widest">
                             <span>${s.numberOfAyahs} آية</span>
                             <span class="w-1 h-1 bg-current rounded-full"></span>
@@ -368,7 +368,7 @@ function renderSurahs() {
                     <button onclick="toggleFavoriteSurah(event, ${s.number})" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all ${state.favorites.surahs.includes(s.number) ? 'text-red-500' : 'opacity-20'}">
                         <i data-lucide="heart" class="w-6 h-6 ${state.favorites.surahs.includes(s.number) ? 'fill-red-500' : ''}"></i>
                     </button>
-                    <button onclick="playSurah(event, ${s.number})" class="w-12 h-12 bg-[#059669]/10 text-[#059669] rounded-2xl flex items-center justify-center hover:bg-[#059669] hover:text-white transition-all">
+                    <button onclick="playSurah(event, ${s.number})" class="w-12 h-12 bg-[#0A5239]/10 text-[#0A5239] rounded-2xl flex items-center justify-center hover:bg-[#0A5239] hover:text-white transition-all">
                         <i data-lucide="play" class="w-6 h-6 fill-current"></i>
                     </button>
                 </div>
@@ -405,9 +405,9 @@ async function openSurah(num) {
         
         if (data && data.result && data.result.length > 0) {
             ayahList.innerHTML = data.result.map(a => `
-                <div class="bg-white dark:bg-[#0F172A] p-6 rounded-3xl space-y-4">
+                <div class="bg-white dark:bg-[#16231C] p-6 rounded-3xl space-y-4">
                     <div class="flex justify-between items-start">
-                        <span class="w-10 h-10 rounded-full border border-black/5 flex items-center justify-center opacity-40 font-bold">${a.aya}</span>
+                        <span class="w-10 h-10 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center opacity-40 font-bold">${a.aya}</span>
                     </div>
                     <p class="text-2xl font-['Amiri'] leading-relaxed text-right font-bold" style="font-size: ${state.fontSize}px">${a.arabic_text}</p>
                     <p class="text-sm opacity-60 text-right">${a.translation}</p>
@@ -418,9 +418,9 @@ async function openSurah(num) {
             const res2 = await fetch(`https://api.alquran.cloud/v1/surah/${num}/ar.alafasy`);
             const data2 = await res2.json();
             ayahList.innerHTML = data2.data.ayahs.map(a => `
-                <div class="bg-white dark:bg-[#0F172A] p-6 rounded-3xl space-y-4">
+                <div class="bg-white dark:bg-[#16231C] p-6 rounded-3xl space-y-4">
                     <div class="flex justify-between items-start">
-                        <span class="w-10 h-10 rounded-full border border-black/5 flex items-center justify-center opacity-40 font-bold">${a.numberInSurah}</span>
+                        <span class="w-10 h-10 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center opacity-40 font-bold">${a.numberInSurah}</span>
                     </div>
                     <p class="text-2xl font-['Amiri'] leading-relaxed text-right font-bold" style="font-size: ${state.fontSize}px">${a.text}</p>
                 </div>
@@ -486,10 +486,10 @@ function setRadioCat(cat) {
     document.querySelectorAll('.radio-tab-btn').forEach(btn => {
         const catName = getCatName(cat).replace('القراء', 'القراء'); // Simplified match
         if (btn.innerText.includes(getCatName(cat).split(' ')[0])) {
-            btn.classList.add('bg-[#059669]', 'text-white');
+            btn.classList.add('bg-[#0A5239]', 'text-white');
             btn.classList.remove('bg-white');
         } else {
-            btn.classList.remove('bg-[#059669]', 'text-white');
+            btn.classList.remove('bg-[#0A5239]', 'text-white');
             btn.classList.add('bg-white');
         }
     });
@@ -508,16 +508,16 @@ function renderRadios() {
     list.innerHTML = filtered.slice(0, 50).map(r => `
         <div onclick="startAudio('${r.url}', '${r.name}', 'راديو مباشر', '${r.id || ''}', '${r.provider || ''}')" class="premium-card p-6 flex items-center justify-between cursor-pointer group">
             <div class="flex items-center gap-5">
-                <div class="w-14 h-14 bg-[#059669]/5 rounded-[1.25rem] flex items-center justify-center text-[#059669] group-hover:bg-[#059669] group-hover:text-white transition-all">
+                <div class="w-14 h-14 bg-[#0A5239]/5 rounded-[1.25rem] flex items-center justify-center text-[#0A5239] group-hover:bg-[#0A5239] group-hover:text-white transition-all">
                     <i data-lucide="radio" class="w-7 h-7"></i>
                 </div>
-                <h3 class="font-extrabold text-lg group-hover:text-[#059669] transition-colors text-right">${r.name}</h3>
+                <h3 class="font-extrabold text-lg group-hover:text-[#0A5239] transition-colors text-right">${r.name}</h3>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="toggleFavoriteRadio(event, '${r.url}')" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all ${state.favorites.radios.includes(r.url) ? 'text-red-500' : 'opacity-20'}">
                     <i data-lucide="heart" class="w-6 h-6 ${state.favorites.radios.includes(r.url) ? 'fill-red-500' : ''}"></i>
                 </button>
-                <button class="w-12 h-12 bg-[#059669] text-white rounded-2xl flex items-center justify-center hover:scale-105 transition-all">
+                <button class="w-12 h-12 bg-[#0A5239] text-white rounded-2xl flex items-center justify-center hover:scale-105 transition-all">
                     <i data-lucide="play" class="w-6 h-6 fill-white"></i>
                 </button>
             </div>
@@ -549,7 +549,7 @@ async function initAzkar() {
         // Render cats list
         const catList = document.getElementById('azkar-cats-modal');
         catList.innerHTML = Object.keys(data).map(cat => `
-            <button onclick="setAzkarCategory('${cat}')" class="w-full text-right p-4 hover:bg-[#059669]/5 rounded-2xl font-bold transition-all">${cat}</button>
+            <button onclick="setAzkarCategory('${cat}')" class="w-full text-right p-4 hover:bg-[#0A5239]/5 rounded-2xl font-bold transition-all">${cat}</button>
         `).join('');
         
         renderAzkar();
@@ -578,15 +578,15 @@ function renderAzkar() {
         return `
             <div class="premium-card p-10 flex flex-col ${complete ? 'opacity-40 grayscale scale-[0.98]' : ''} transition-all duration-500">
                 <p class="text-3xl font-['Amiri'] leading-relaxed text-right mb-10 font-bold">${z.content}</p>
-                <div class="flex items-center justify-between border-t border-black/5 pt-8">
+                <div class="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-8">
                     <div class="text-right">
                         <span class="text-[10px] opacity-40 font-black block mb-1 uppercase tracking-widest">التكرار</span>
                         <div class="flex items-baseline gap-1">
-                            <span class="font-black text-2xl text-[#059669]">${current}</span>
+                            <span class="font-black text-2xl text-[#0A5239]">${current}</span>
                             <span class="opacity-20 text-xs">/ ${target}</span>
                         </div>
                     </div>
-                    <button onclick="incAzkar(${idx}, ${target})" ${complete ? 'disabled' : ''} class="w-24 h-24 bg-[#059669] text-white rounded-[2rem] text-4xl font-black shadow-xl active:scale-90 transition-all hover:bg-.#10B981.">
+                    <button onclick="incAzkar(${idx}, ${target})" ${complete ? 'disabled' : ''} class="w-24 h-24 bg-[#0A5239] text-white rounded-[2rem] text-4xl font-black shadow-xl active:scale-90 transition-all hover:bg-.#137952.">
                         ${complete ? '✓' : current}
                     </button>
                     <button onclick="resetAzkar(${idx})" class="w-14 h-14 bg-black/5 rounded-2xl flex items-center justify-center opacity-30 hover:opacity-100 hover:bg-black/10 transition-all"><i data-lucide="refresh-cw" class="w-6 h-6"></i></button>
@@ -836,8 +836,8 @@ function renderReciters() {
     list.innerHTML = state.quran.reciters
         .filter(r => r.name.toLowerCase().includes(query))
         .map(r => `
-            <button onclick="selectReciter('${r.id}')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-[#059669]/10 text-right transition-all">
-                <div class="w-8 h-8 rounded-full bg-[#059669]/5 flex items-center justify-center font-bold text-[#059669]">${r.name.charAt(0)}</div>
+            <button onclick="selectReciter('${r.id}')" class="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-[#0A5239]/10 text-right transition-all">
+                <div class="w-8 h-8 rounded-full bg-[#0A5239]/5 flex items-center justify-center font-bold text-[#0A5239]">${r.name.charAt(0)}</div>
                 <span class="font-bold truncate">${r.name}</span>
             </button>
         `).join('');

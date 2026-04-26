@@ -1,12 +1,13 @@
 /* Custom Properties and Base Styles */
 :root {
-    --primary: #059669;
-    --primary-light: #10B981;
+    --primary: #0A5239;
+    --primary-light: #137952;
     --accent: #D4AF37; /* Gold accent */
-    --bg-light: #F8FAFC; /* Warm paper/cream */
-    --bg-dark: #020617;
+    --accent-glow: rgba(212, 175, 55, 0.4);
+    --bg-light: #FDFBF7; /* Warm paper/cream */
+    --bg-dark: #0B1310;
     --card-light: #FFFFFF;
-    --card-dark: #0F172A;
+    --card-dark: #121C17;
     --f-serif: 'Amiri', serif;
     --f-sans: 'Cairo', sans-serif;
 }
@@ -15,10 +16,14 @@ body {
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     background-color: var(--bg-light);
+    /* Subtle geometric overlay for light mode */
+    background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%230a5239' fill-opacity='0.02' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .dark body {
     background-color: var(--bg-dark);
+    /* Subtle geometric overlay for dark mode */
+    background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4af37' fill-opacity='0.015' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* Animations */
@@ -39,39 +44,64 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba.5, 150, 105, 0.1);
+    background: rgba(10, 82, 57, 0.15);
     border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.15);
 }
 
 /* Glassmorphism Classes */
 .glass {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
 
 .dark .glass {
-    background: rgba(15, 30, 24, 0.8);
+    background: rgba(18, 28, 23, 0.85);
 }
 
 /* Premium Card Effects */
 .premium-card {
     background: var(--card-light);
-    border: 1px solid rgba(0, 0, 0, 0.02);
-    border-radius: 2rem;
-    box-shadow: 0 10px 40px -10px rgba.5, 150, 105, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(10, 82, 57, 0.1);
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px -10px rgba(10, 82, 57, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.premium-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.premium-card:hover::after {
+    opacity: 1;
 }
 
 .dark .premium-card {
     background: var(--card-dark);
-    border-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(212, 175, 55, 0.15);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .premium-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 20px 40px -10px rgba.5, 150, 105, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 20px 40px -10px rgba(10, 82, 57, 0.1), 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.dark .premium-card:hover {
+    box-shadow: 0 15px 40px -10px rgba(212, 175, 55, 0.08); /* gold glow */
 }
 
 /* Nav Pill Style */
@@ -83,6 +113,9 @@ body {
     color: var(--primary);
     transform: translateY(-2px);
 }
+.dark .nav-btn.active {
+    color: var(--accent);
+}
 
 .nav-indicator {
     position: absolute;
@@ -92,6 +125,9 @@ body {
     background: var(--primary);
     border-radius: 99px;
     transition: all 0.3s ease;
+}
+.dark .nav-indicator {
+    background: var(--accent);
 }
 
 /* Marquee for titles */
@@ -116,13 +152,13 @@ body {
     content: '';
     position: absolute;
     inset: -4px;
-    background: var(--primary);
+    background: var(--accent);
     border-radius: inherit;
-    opacity: 0.2;
+    opacity: 0.3;
     animation: audio-glow 2s ease-in-out infinite;
 }
 
 @keyframes audio-glow {
     0%, 100% { transform: scale(1); opacity: 0.1; }
-    50% { transform: scale(1.1); opacity: 0.2; }
+    50% { transform: scale(1.15); opacity: 0.3; }
 }
