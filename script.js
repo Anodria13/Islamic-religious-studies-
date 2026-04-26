@@ -17,10 +17,8 @@ const state = {
     },
     radios: [],
     manualRadios: [
-        { id: '8s5u8p488zquv', name: 'إذاعة القرآن الكريم من القاهرة', url: 'https://n02.radiojar.com/8s5u8p488zquv', category: 'channel', provider: 'radiojar' },
-        { id: '0tpyuch996quv', name: 'إذاعة القرآن الكريم من السعودية', url: 'https://n0a.radiojar.com/0tpyuch996quv', category: 'channel', provider: 'radiojar' },
-        { id: 'makkah', name: 'إذاعة القرآن الكريم من مكة (بث مباشر)', url: 'https://live.mp3quran.net/makkah', category: 'channel' },
-        { name: 'إذاعة القرآن الكريم من نابلس', url: 'https://stream.radioquran.ps/radio/8000/radio.mp3', category: 'channel' }
+        { id: '8s5u5tpdtwzuv', name: 'إذاعة القرآن الكريم من القاهرة', url: 'https://stream.radiojar.com/8s5u5tpdtwzuv', category: 'channel', provider: 'radiojar' },
+        { id: '4wqre23fytzuv', name: 'إذاعة القرآن الكريم السعودية', url: 'https://stream.radiojar.com/4wqre23fytzuv', category: 'channel', provider: 'radiojar' }
     ],
     activeRadioCat: 'reciter',
     names: [],
@@ -464,12 +462,26 @@ async function initRadio() {
         const data = await fetchWithCache(`https://www.mp3quran.net/api/v3/radios?language=${lang}`, `radios_all`);
         const apiRadios = data.radios.map(r => {
             let cat = 'reciter';
+            let subCat = '';
             const n = r.name.toLowerCase();
             const secureUrl = r.url.replace('http://', 'https://');
-            if (n.includes('تفسير') || n.includes('فتاوى')) cat = 'tafsir';
-            else if (n.includes('أذكار') || n.includes('رقية')) cat = 'azkar';
-            else if (n.includes('إذاعة') || n.includes('راديو')) cat = 'channel';
-            return { ...r, url: secureUrl, category: cat };
+            
+            if (n.includes('ترجمة')) {
+                cat = 'translation';
+            } else if (n.includes('الإذاعة العامة') || n.includes('الفتاوى العامة')) {
+                cat = 'channel';
+            } else if (n.includes('تفسير')) {
+                cat = 'misc';
+                subCat = 'تفسير القرآن';
+            } else if (n.includes('فتاوى') || n.includes('أذكار') || n.includes('رقية')) {
+                cat = 'misc';
+                if (n.includes('فتاوى')) subCat = 'فتاوى';
+                else if (n.includes('أذكار')) subCat = 'أذكار';
+                else if (n.includes('رقية')) subCat = 'الرقية الشرعية';
+            } else {
+                cat = 'reciter';
+            }
+            return { ...r, url: secureUrl, category: cat, subCat: subCat };
         });
 
         // Combine manual and API radios
@@ -484,45 +496,73 @@ async function initRadio() {
 function setRadioCat(cat) {
     state.activeRadioCat = cat;
     document.querySelectorAll('.radio-tab-btn').forEach(btn => {
-        const catName = getCatName(cat).replace('القراء', 'القراء'); // Simplified match
-        if (btn.innerText.includes(getCatName(cat).split(' ')[0])) {
+        let isMatch = false;
+        if (cat === 'reciter' && btn.innerText.includes('القراء')) isMatch = true;
+        if (cat === 'channel' && btn.innerText.includes('قنوات')) isMatch = true;
+        if (cat === 'translation' && btn.innerText.includes('الترجمات')) isMatch = true;
+        if (cat === 'misc' && btn.innerText.includes('المتنوعة')) isMatch = true;
+        
+        if (isMatch) {
             btn.classList.add('bg-[#0A5239]', 'text-white');
-            btn.classList.remove('bg-white');
+            btn.classList.remove('bg-white', 'text-black', 'dark:bg-[#16231C]', 'dark:text-white', 'border-black/10', 'dark:border-white/10');
+            btn.classList.remove('border');
         } else {
             btn.classList.remove('bg-[#0A5239]', 'text-white');
-            btn.classList.add('bg-white');
+            btn.classList.add('bg-white', 'border', 'border-black/10', 'dark:border-white/10', 'dark:bg-[#16231C]', 'dark:text-white');
         }
     });
     renderRadios();
 }
 
-function getCatName(cat) {
-    return { reciter: 'القراء', channel: 'قنوات', azkar: 'أذكار', tafsir: 'تفسير' }[cat];
-}
-
-function renderRadios() {
-    const list = document.getElementById('radio-list');
-    const query = document.getElementById('radio-search').value.toLowerCase();
-    const filtered = state.radios.filter(r => r.category === state.activeRadioCat && r.name.toLowerCase().includes(query));
-    
-    list.innerHTML = filtered.slice(0, 50).map(r => `
-        <div onclick="startAudio('${r.url}', '${r.name}', 'راديو مباشر', '${r.id || ''}', '${r.provider || ''}')" class="premium-card p-6 flex items-center justify-between cursor-pointer group">
+function renderSingleRadio(r) {
+    return `
+        <div onclick="startAudio('${r.url}', '${r.name.replace(/'/g, "\\'")}', 'راديو مباشر', '${r.id || ''}', '${r.provider || ''}')" class="premium-card p-6 flex items-center justify-between cursor-pointer group">
             <div class="flex items-center gap-5">
-                <div class="w-14 h-14 bg-[#0A5239]/5 rounded-[1.25rem] flex items-center justify-center text-[#0A5239] group-hover:bg-[#0A5239] group-hover:text-white transition-all">
+                <div class="w-14 h-14 bg-[#0A5239]/5 rounded-[1.25rem] flex items-center justify-center text-[#0A5239] group-hover:bg-[#0A5239] group-hover:text-white transition-all border border-black/5 dark:border-white/5">
                     <i data-lucide="radio" class="w-7 h-7"></i>
                 </div>
                 <h3 class="font-extrabold text-lg group-hover:text-[#0A5239] transition-colors text-right">${r.name}</h3>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="toggleFavoriteRadio(event, '${r.url}')" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all ${state.favorites.radios.includes(r.url) ? 'text-red-500' : 'opacity-20'}">
+                <button onclick="toggleFavoriteRadio(event, '${r.url}')" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all ${state.favorites.radios.includes(r.url) ? 'text-red-500' : 'opacity-20'} border border-transparent hover:border-black/5 dark:hover:border-white/5">
                     <i data-lucide="heart" class="w-6 h-6 ${state.favorites.radios.includes(r.url) ? 'fill-red-500' : ''}"></i>
                 </button>
-                <button class="w-12 h-12 bg-[#0A5239] text-white rounded-2xl flex items-center justify-center hover:scale-105 transition-all">
+                <button class="w-12 h-12 bg-[#0A5239] text-white rounded-2xl flex items-center justify-center hover:scale-105 transition-all shadow-md shadow-[#0A5239]/20">
                     <i data-lucide="play" class="w-6 h-6 fill-white"></i>
                 </button>
             </div>
         </div>
-    `).join('');
+    `;
+}
+
+function renderRadios() {
+    const list = document.getElementById('radio-list');
+    const query = document.getElementById('radio-search').value.toLowerCase();
+    
+    if (state.activeRadioCat === 'misc') {
+        const filtered = state.radios.filter(r => r.category === 'misc' && r.name.toLowerCase().includes(query));
+        const groups = {};
+        for (const r of filtered) {
+           const sc = r.subCat || 'أخرى';
+           if (!groups[sc]) groups[sc] = [];
+           groups[sc].push(r);
+        }
+        
+        let html = '';
+        for (const sc in groups) {
+            html += `<div class="col-span-full font-black text-xl text-[#0A5239] dark:text-[#D4AF37] mt-8 mb-4 border-b border-black/5 dark:border-white/5 pb-2 px-2">${sc}</div>`;
+            html += groups[sc].map(r => renderSingleRadio(r)).join('');
+        }
+        if (html === '') {
+            html = '<p class="col-span-full text-center opacity-50 p-10 font-bold">لا توجد نتائج</p>';
+        }
+        list.innerHTML = html;
+    } else {
+        const filtered = state.radios.filter(r => r.category === state.activeRadioCat && r.name.toLowerCase().includes(query));
+        list.innerHTML = filtered.length > 0 
+            ? filtered.slice(0, 50).map(r => renderSingleRadio(r)).join('')
+            : '<p class="col-span-full text-center opacity-50 p-10 font-bold">لا توجد نتائج</p>';
+    }
     lucide.createIcons();
 }
 
