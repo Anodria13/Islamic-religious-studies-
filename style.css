@@ -1,12 +1,12 @@
 /* Custom Properties and Base Styles */
 :root {
-    --primary: #006948;
-    --primary-light: #00855D;
+    --primary: #059669;
+    --primary-light: #10B981;
     --accent: #D4AF37; /* Gold accent */
-    --bg-light: #FDFCF8; /* Warm paper/cream */
-    --bg-dark: #0A1410;
+    --bg-light: #F8FAFC; /* Warm paper/cream */
+    --bg-dark: #020617;
     --card-light: #FFFFFF;
-    --card-dark: #12221A;
+    --card-dark: #0F172A;
     --f-serif: 'Amiri', serif;
     --f-sans: 'Cairo', sans-serif;
 }
@@ -39,7 +39,7 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(0, 105, 72, 0.1);
+    background: rgba.5, 150, 105, 0.1);
     border-radius: 10px;
 }
 
@@ -57,10 +57,10 @@ body {
 /* Premium Card Effects */
 .premium-card {
     background: var(--card-light);
-    border: 1px solid rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.02);
     border-radius: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02), 0 1px 0 rgba(0, 0, 0, 0.03);
-    transition: all 0.3s ease;
+    box-shadow: 0 10px 40px -10px rgba.5, 150, 105, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .premium-card {
@@ -71,7 +71,7 @@ body {
 
 .premium-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0, 105, 72, 0.08);
+    box-shadow: 0 20px 40px -10px rgba.5, 150, 105, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 /* Nav Pill Style */
