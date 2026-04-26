@@ -8,11 +8,13 @@ const state = {
     language: localStorage.getItem('lang') || 'ar',
     theme: localStorage.getItem('theme') || 'light',
     location: JSON.parse(localStorage.getItem('location')) || { city: 'Cairo', country: 'Egypt' },
-    favorites: JSON.parse(localStorage.getItem('favorites')) || { surahs: [], radios: [] },
+    favorites: JSON.parse(localStorage.getItem('favorites')) || { surahs: [], radios: [], ayahs: [] },
     quran: {
         surahs: [],
         reciters: [],
+        ayahReciters: [],
         selectedReciter: localStorage.getItem('selectedReciter') || 'quran-com-mishary',
+        ayahReciter: localStorage.getItem('ayahReciter') || 'ar.alafasy',
         activeSurah: null
     },
     radios: [],
@@ -40,8 +42,20 @@ const state = {
         title: '',
         subtitle: ''
     },
+    ayahsTracker: {
+        playing: false,
+        surahNum: null,
+        currentIndex: 0,
+        ayahs: [],
+        audioObj: null
+    },
     fontSize: parseInt(localStorage.getItem('fontSize')) || 24
 };
+
+if (!state.favorites.ayahs) state.favorites.ayahs = [];
+
+let showingQuranFavs = false;
+let showingRadioFavs = false;
 
 // --- API Helpers ---
 async function fetchWithCache(url, cacheKey, expiry = 43200000) { // 12 hours default
@@ -71,10 +85,18 @@ async function shareText(text) {
     if (navigator.share) {
         try {
             await navigator.share({ title: 'إسلاميات', text: text });
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error("Share error:", e);
+            }
+        }
     } else {
-        navigator.clipboard.writeText(text);
-        alert('تم نسخ النص!');
+        try {
+            await navigator.clipboard.writeText(text);
+            alert('تم نسخ النص!');
+        } catch (e) {
+            console.error("Clipboard error:", e);
+        }
     }
 }
 
@@ -112,10 +134,10 @@ function switchTab(tabId) {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         const id = btn.getAttribute('data-tab');
         if (id === tabId) {
-            btn.classList.remove('opacity-40');
+            btn.classList.remove('opacity-70');
             btn.classList.add('text-[#0A5239]');
         } else {
-            btn.classList.add('opacity-40');
+            btn.classList.add('opacity-70');
             btn.classList.remove('text-[#0A5239]');
         }
     });
@@ -177,7 +199,7 @@ function renderPrayerGrid(timings) {
             <div class="w-12 h-12 bg-[#0A5239]/5 rounded-2xl flex items-center justify-center mb-4">
                 <i data-lucide="${p.icon}" class="w-6 h-6 text-[#0A5239]"></i>
             </div>
-            <span class="text-xs font-black opacity-40 uppercase tracking-widest mb-1">${state.language === 'en' ? p.en : p.name}</span>
+            <span class="text-xs font-black opacity-70 uppercase tracking-widest mb-1 text-[#0A5239] dark:text-white">${state.language === 'en' ? p.en : p.name}</span>
             <div class="text-3xl font-black text-[#0A5239] dark:text-[#D4AF37]">${formatTime(timings[p.key])}</div>
         </div>
     `).join('');
@@ -263,7 +285,7 @@ function renderNames() {
     const list = document.getElementById('names-list');
     list.innerHTML = state.names.map(n => `
         <div class="premium-card p-3 sm:p-5 flex flex-col items-center justify-center text-center group cursor-default min-h-[110px] sm:min-h-[130px]">
-            <span class="text-[10px] sm:text-xs opacity-40 font-bold mb-1 sm:mb-2 group-hover:opacity-100 transition-opacity">#${n.number}</span>
+            <span class="text-[10px] sm:text-xs opacity-70 font-bold mb-1 sm:mb-2 group-hover:opacity-100 transition-opacity">#${n.number}</span>
             <h3 class="text-2xl sm:text-3xl font-bold text-[#0A5239] dark:text-[#D4AF37] font-['Amiri'] leading-relaxed py-1">${n.name}</h3>
             <p class="text-[9px] sm:text-[11px] font-bold opacity-60 mt-1 leading-snug px-1 text-balance">${n.en.meaning}</p>
         </div>
@@ -315,14 +337,21 @@ async function initQuran() {
         state.quran.surahs = res.data;
         renderSurahs();
         
-        // Fetch reciters
+        // Fetch reciters for global audio
         const lang = state.language === 'ar' ? 'ar' : 'eng';
         const recData = await fetchWithCache(`https://www.mp3quran.net/api/v3/reciters?language=${lang}`, `reciters_${lang}`);
         
+        // Fetch ayah tracker reciters from AlQuran.cloud API
+        const ayahRecData = await fetchWithCache('https://api.alquran.cloud/v1/edition?format=audio&language=ar', 'ayah_reciters');
+        if (ayahRecData && ayahRecData.data) {
+            state.quran.ayahReciters = ayahRecData.data.map(r => ({id: r.identifier, name: r.name}));
+            updateAyahReciterBtnText();
+        }
+        
         // Manual high quality reciters
         state.quran.reciters = [
-            { id: 'quran-com-mishary', name: state.language === 'ar' ? 'مشاري العفاسي (HQ)' : 'Mishary Alafasy (HQ)', server: 'https://download.quranicaudio.com/qdc/mishari_al_afasy/murattal/' },
-            { id: 'quran-com-maher', name: state.language === 'ar' ? 'ماهر المعيقلي (HQ)' : 'Maher Al-Muaiqly (HQ)', server: 'https://download.quranicaudio.com/qdc/maher_al_muaiqly/murattal/' }
+            { id: 'quran-com-mishary', name: state.language === 'ar' ? 'مشاري العفاسي (HQ)' : 'Mishary Alafasy (HQ)', server: 'https://server8.mp3quran.net/afs/' },
+            { id: 'quran-com-maher', name: state.language === 'ar' ? 'ماهر المعيقلي (HQ)' : 'Maher Al-Muaiqly (HQ)', server: 'https://server12.mp3quran.net/maher/' }
         ];
 
         recData.reciters.forEach(r => {
@@ -347,15 +376,24 @@ function renderSurahs() {
     const list = document.getElementById('surah-list');
     const query = document.getElementById('surah-search').value.toLowerCase();
     
-    list.innerHTML = state.quran.surahs
-        .filter(s => s.name.includes(query) || s.englishName.toLowerCase().includes(query))
-        .map(s => `
+    let filtered = state.quran.surahs.filter(s => s.name.includes(query) || s.englishName.toLowerCase().includes(query));
+    if (showingQuranFavs) {
+        filtered = filtered.filter(s => state.favorites.surahs.includes(s.number));
+    }
+    
+    if (filtered.length === 0) {
+        let msg = showingQuranFavs ? 'لا توجد سور في المفضلة' : 'لم يتم العثور على سورة';
+        list.innerHTML = `<p class="text-center opacity-50 p-10 font-bold">${msg}</p>`;
+        return;
+    }
+
+    list.innerHTML = filtered.map(s => `
             <div onclick="openSurah(${s.number})" class="premium-card p-6 flex items-center justify-between cursor-pointer group">
                 <div class="flex items-center gap-5">
                     <div class="w-14 h-14 bg-[#0A5239]/5 rounded-[1.25rem] flex items-center justify-center font-black text-[#0A5239] transition-all group-hover:bg-[#0A5239] group-hover:text-white">${s.number}</div>
                     <div class="text-right">
                         <h3 class="font-extrabold text-xl mb-1 group-hover:text-[#0A5239] transition-colors">${s.name}</h3>
-                        <div class="flex items-center gap-2 opacity-40 text-[10px] font-black uppercase tracking-widest">
+                        <div class="flex items-center gap-2 opacity-70 text-[10px] font-black uppercase tracking-widest">
                             <span>${s.numberOfAyahs} آية</span>
                             <span class="w-1 h-1 bg-current rounded-full"></span>
                             <span>${s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</span>
@@ -363,7 +401,10 @@ function renderSurahs() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="toggleFavoriteSurah(event, ${s.number})" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all ${state.favorites.surahs.includes(s.number) ? 'text-red-500' : 'opacity-20'}">
+                    <button onclick="downloadSurah(event, ${s.number})" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all opacity-20 hover:opacity-100">
+                        <i data-lucide="download" class="w-6 h-6"></i>
+                    </button>
+                    <button onclick="toggleFavoriteSurah(event, ${s.number})" class="p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all ${state.favorites.surahs.includes(s.number) ? 'text-red-500' : 'opacity-20 hover:opacity-100'}">
                         <i data-lucide="heart" class="w-6 h-6 ${state.favorites.surahs.includes(s.number) ? 'fill-red-500' : ''}"></i>
                     </button>
                     <button onclick="playSurah(event, ${s.number})" class="w-12 h-12 bg-[#0A5239]/10 text-[#0A5239] rounded-2xl flex items-center justify-center hover:bg-[#0A5239] hover:text-white transition-all">
@@ -375,6 +416,22 @@ function renderSurahs() {
     lucide.createIcons();
 }
 
+function toggleQuranFavoritesOnly() {
+    showingQuranFavs = !showingQuranFavs;
+    const btn = document.getElementById('quran-fav-btn');
+    if (showingQuranFavs) {
+        btn.classList.add('bg-[#0A5239]', 'text-white');
+        btn.classList.remove('bg-white', 'text-[#0A5239]', 'dark:bg-[#16231C]', 'dark:text-[#D4AF37]');
+        btn.innerHTML = '<i data-lucide="heart" class="w-6 h-6 fill-white"></i>';
+    } else {
+        btn.classList.remove('bg-[#0A5239]', 'text-white');
+        btn.classList.add('bg-white', 'text-[#0A5239]', 'dark:bg-[#16231C]', 'dark:text-[#D4AF37]');
+        btn.innerHTML = '<i data-lucide="heart" class="w-6 h-6"></i>';
+    }
+    lucide.createIcons();
+    renderSurahs();
+}
+
 function toggleFavoriteSurah(e, num) {
     if (e) e.stopPropagation();
     const idx = state.favorites.surahs.indexOf(num);
@@ -382,6 +439,75 @@ function toggleFavoriteSurah(e, num) {
     else state.favorites.surahs.push(num);
     localStorage.setItem('favorites', JSON.stringify(state.favorites));
     renderSurahs();
+}
+
+async function downloadSurah(e, num) {
+    if (e) e.stopPropagation();
+    const surah = state.quran.surahs.find(s => s.number === num);
+    const reciter = state.quran.reciters.find(r => r.id === state.quran.selectedReciter) || state.quran.reciters[0];
+    
+    const server = reciter.server.endsWith('/') ? reciter.server : reciter.server + '/';
+    let url = `${server}${String(num).padStart(3, '0')}.mp3`;
+
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Surah_${surah.englishName}_${reciter.name}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch (err) {
+        console.error("Failed to download whole surah", err);
+        alert('فشل التحميل');
+    }
+}
+
+function updateAyahReciterBtnText() {
+    const btn = document.getElementById('ayah-reciter-btn-text');
+    if (btn && state.quran.ayahReciters.length > 0) {
+        const current = state.quran.ayahReciters.find(r => r.id === state.quran.ayahReciter);
+        btn.textContent = current ? current.name : "مشاري العفاسي";
+    }
+}
+
+function openAyahRecitersModal() {
+    const modal = document.getElementById('ayah-reciter-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    renderAyahReciters();
+}
+
+function closeAyahRecitersModal() {
+    const modal = document.getElementById('ayah-reciter-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function renderAyahReciters() {
+    const list = document.getElementById('ayah-reciter-list');
+    const query = document.getElementById('ayah-reciter-search').value.toLowerCase();
+    
+    let filtered = state.quran.ayahReciters.filter(r => r.name.toLowerCase().includes(query));
+    
+    list.innerHTML = filtered.map(r => `
+        <button onclick="selectAyahReciter('${r.id}')" class="w-full text-right p-4 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between group">
+            <span class="font-bold text-sm sm:text-base ${state.quran.ayahReciter === r.id ? 'text-[#0A5239] dark:text-[#D4AF37]' : ''}">${r.name}</span>
+            <i data-lucide="${state.quran.ayahReciter === r.id ? 'check-circle-2' : 'circle'}" class="w-5 h-5 ${state.quran.ayahReciter === r.id ? 'text-[#0A5239] dark:text-[#D4AF37]' : 'opacity-30 group-hover:opacity-50'}"></i>
+        </button>
+    `).join('');
+    lucide.createIcons();
+}
+
+function selectAyahReciter(id) {
+    state.quran.ayahReciter = id;
+    localStorage.setItem('ayahReciter', id);
+    updateAyahReciterBtnText();
+    closeAyahRecitersModal();
+    if (state.ayahsTracker.surahNum) {
+        openSurah(state.ayahsTracker.surahNum || state.quran.activeSurah.number);
+    }
 }
 
 async function openSurah(num) {
@@ -394,41 +520,225 @@ async function openSurah(num) {
     detail.classList.remove('hidden');
     ayahList.innerHTML = '<div class="flex justify-center py-20"><i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i></div>';
     lucide.createIcons();
+    
+    // reset tracker
+    stopAyahsTracker();
 
     try {
         console.log(`Fetching surah ${num}...`);
-        const res = await fetch(`https://quranenc.com/api/v1/translation/sura/arabic_moyassar/${num}`);
-        if (!res.ok) throw new Error('API unstable');
+        const reciter = state.quran.ayahReciter || 'ar.alafasy';
+        
+        const res = await fetch(`https://api.alquran.cloud/v1/surah/${num}/editions/quran-uthmani,${reciter},ar.muyassar`);
         const data = await res.json();
         
-        if (data && data.result && data.result.length > 0) {
-            ayahList.innerHTML = data.result.map(a => `
-                <div class="bg-white dark:bg-[#16231C] p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-start">
-                        <span class="w-10 h-10 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center opacity-40 font-bold">${a.aya}</span>
-                    </div>
-                    <p class="text-2xl font-['Amiri'] leading-relaxed text-right font-bold" style="font-size: ${state.fontSize}px">${a.arabic_text}</p>
-                    <p class="text-sm opacity-60 text-right">${a.translation}</p>
-                </div>
-            `).join('');
+        if (data && data.code === 200) {
+            const uthmani = data.data[0].ayahs;
+            const audioData = data.data[1].ayahs;
+            const tafsir = data.data[2].ayahs;
+            
+            state.ayahsTracker.ayahs = uthmani.map((a, i) => ({
+                numberInSurah: a.numberInSurah,
+                text: a.text,
+                audio: audioData[i].audio,
+                translation: tafsir[i].text
+            }));
+            
+            state.ayahsTracker.surahNum = num;
+            renderAyahsView();
         } else {
-            // Fallback to alquran.cloud if quranenc fails
-            const res2 = await fetch(`https://api.alquran.cloud/v1/surah/${num}/ar.alafasy`);
-            const data2 = await res2.json();
-            ayahList.innerHTML = data2.data.ayahs.map(a => `
-                <div class="bg-white dark:bg-[#16231C] p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-start">
-                        <span class="w-10 h-10 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center opacity-40 font-bold">${a.numberInSurah}</span>
-                    </div>
-                    <p class="text-2xl font-['Amiri'] leading-relaxed text-right font-bold" style="font-size: ${state.fontSize}px">${a.text}</p>
-                </div>
-            `).join('');
+            throw new Error('API unstable');
         }
     } catch (e) {
         console.error("Fetch Ayahs error:", e);
-        ayahList.innerHTML = '<p class="text-center p-10">فشل في جلب الآيات. يرجى المحقق من الاتصال بالإنترنت.</p>';
+        ayahList.innerHTML = '<p class="text-center p-10">فشل في جلب الآيات. يرجى التحقق من الاتصال بالإنترنت.</p>';
     }
 }
+
+function renderAyahsView() {
+    const ayahList = document.getElementById('ayah-list');
+    
+    ayahList.innerHTML = state.ayahsTracker.ayahs.map((a, i) => `
+        <div id="ayah-card-${i}" class="bg-white dark:bg-[#16231C] p-6 rounded-3xl space-y-4 transition-all duration-300">
+            <div class="flex justify-between items-start">
+                <span class="w-10 h-10 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center opacity-70 font-bold">${a.numberInSurah}</span>
+                <div class="flex gap-2">
+                    <button onclick="toggleFavoriteAyah(event, '${state.quran.activeSurah.number}:${a.numberInSurah}')" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs flex flex-col items-center opacity-70 hover:opacity-100 ${state.favorites.ayahs.includes(state.quran.activeSurah.number+':'+a.numberInSurah) ? 'text-red-500 opacity-100' : ''}">
+                        <i data-lucide="heart" class="w-5 h-5 ${state.favorites.ayahs.includes(state.quran.activeSurah.number+':'+a.numberInSurah) ? 'fill-red-500' : ''}"></i>
+                    </button>
+                    <button onclick="downloadAyahAudio('${a.audio}', '${state.quran.activeSurah.name}_${a.numberInSurah}')" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all text-xs flex flex-col items-center opacity-70 hover:opacity-100">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="playSingleAyah(${i})" id="ayah-play-btn-${i}" class="p-2 rounded-xl hover:bg-[#0A5239]/10 transition-all text-xs flex flex-col items-center text-[#0A5239] dark:text-[#D4AF37]">
+                        <i data-lucide="play-circle" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="text-2xl font-['Amiri'] leading-relaxed text-right font-bold" style="font-size: ${state.fontSize}px">${a.text}</p>
+            <p class="text-sm opacity-60 text-right">${a.translation}</p>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+function toggleFavoriteAyah(e, id) {
+    if (e) e.stopPropagation();
+    const idx = state.favorites.ayahs.indexOf(id);
+    if (idx > -1) state.favorites.ayahs.splice(idx, 1);
+    else state.favorites.ayahs.push(id);
+    localStorage.setItem('favorites', JSON.stringify(state.favorites));
+    renderAyahsView();
+}
+
+async function downloadAyahAudio(url, filename) {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Ayah_${filename}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch (e) {
+        console.error("Download failed", e);
+        alert('فشل التحميل');
+    }
+}
+
+// Tracking logic
+function stopAyahsTracker() {
+    state.ayahsTracker.playing = false;
+    if (state.ayahsTracker.audioObj) {
+        state.ayahsTracker.audioObj.pause();
+        state.ayahsTracker.audioObj.removeAttribute('src');
+        state.ayahsTracker.audioObj.load();
+        state.ayahsTracker.audioObj = null;
+    }
+    
+    // clear UI
+    document.querySelectorAll('[id^="ayah-card-"]').forEach(c => {
+        c.classList.remove('ring-2', 'ring-[#0A5239]', 'dark:ring-[#D4AF37]', 'bg-[#0A5239]/5', 'dark:bg-[#D4AF37]/5');
+    });
+    document.querySelectorAll('[id^="ayah-play-btn-"]').forEach(btn => {
+        btn.innerHTML = '<i data-lucide="play-circle" class="w-6 h-6"></i>';
+    });
+    lucide.createIcons();
+    
+    const playTrackerBtn = document.getElementById('play-surah-tracker');
+    if(playTrackerBtn) {
+        playTrackerBtn.innerHTML = '<i data-lucide="play-circle" class="w-4 h-4"></i><span>تشغيل وتتبع</span>';
+        lucide.createIcons();
+    }
+}
+
+async function playSingleAyah(index) {
+    // If playing this exact ayah individually, stop it.
+    if (state.ayahsTracker.playing && state.ayahsTracker.currentIndex === index) {
+        stopAyahsTracker();
+        return;
+    }
+    
+    // Stop any globally playing radio or surah
+    if (state.audio.isPlaying) {
+        const globalAudio = document.getElementById('global-audio');
+        if(globalAudio) globalAudio.pause();
+        state.audio.isPlaying = false;
+        updatePlayerBtn();
+    }
+    
+    stopAyahsTracker();
+    globalPlayAyah(index, false); // false = don't auto-advance (only play this one)
+}
+
+function globalPlayAyah(index, autoAdvance = true) {
+    if (index >= state.ayahsTracker.ayahs.length) {
+        stopAyahsTracker();
+        return;
+    }
+    
+    state.ayahsTracker.currentIndex = index;
+    state.ayahsTracker.playing = true;
+    
+    // update tracker btn
+    const playTrackerBtn = document.getElementById('play-surah-tracker');
+    if(playTrackerBtn && autoAdvance) {
+        playTrackerBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i><span>إيقاف</span>';
+        lucide.createIcons();
+    }
+
+    // highlight current
+    document.querySelectorAll('[id^="ayah-card-"]').forEach((c, i) => {
+        if (i === index) {
+            c.classList.add('ring-2', 'ring-[#0A5239]', 'dark:ring-[#D4AF37]', 'bg-[#0A5239]/5', 'dark:bg-[#D4AF37]/5');
+            // scroll into view
+            c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            c.classList.remove('ring-2', 'ring-[#0A5239]', 'dark:ring-[#D4AF37]', 'bg-[#0A5239]/5', 'dark:bg-[#D4AF37]/5');
+        }
+    });
+    
+    document.querySelectorAll('[id^="ayah-play-btn-"]').forEach((btn, i) => {
+        if (i === index) {
+            btn.innerHTML = '<i data-lucide="square" class="w-6 h-6"></i>';
+        } else {
+            btn.innerHTML = '<i data-lucide="play-circle" class="w-6 h-6"></i>';
+        }
+    });
+    lucide.createIcons();
+
+    const audioUrl = state.ayahsTracker.ayahs[index].audio;
+    state.ayahsTracker.audioObj = new Audio(audioUrl);
+    
+    state.ayahsTracker.audioObj.onerror = () => {
+        console.error("Ayah audio load error");
+        if (autoAdvance) {
+            globalPlayAyah(index + 1, autoAdvance);
+        } else {
+            stopAyahsTracker();
+        }
+    };
+    
+    state.ayahsTracker.audioObj.onended = () => {
+        if (autoAdvance && state.ayahsTracker.playing) {
+            globalPlayAyah(index + 1, autoAdvance);
+        } else {
+            stopAyahsTracker();
+        }
+    };
+    
+    state.ayahsTracker.audioObj.play().catch(e => {
+        console.error("Play prevented", e);
+        stopAyahsTracker();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const playTrackerBtn = document.getElementById('play-surah-tracker');
+    if (playTrackerBtn) {
+        playTrackerBtn.onclick = () => {
+            if (state.ayahsTracker.playing) {
+                stopAyahsTracker();
+            } else {
+                if (state.audio.isPlaying) {
+                    const globalAudio = document.getElementById('global-audio');
+                    if(globalAudio) globalAudio.pause();
+                    state.audio.isPlaying = false;
+                    updatePlayerBtn();
+                }
+                globalPlayAyah(0, true);
+            }
+        };
+    }
+    
+    const ayahReciterSearch = document.getElementById('ayah-reciter-search');
+    if (ayahReciterSearch) {
+        ayahReciterSearch.oninput = renderAyahReciters;
+    }
+    const closeAyahReciter = document.getElementById('close-ayah-reciter');
+    if (closeAyahReciter) {
+        closeAyahReciter.onclick = closeAyahRecitersModal;
+    }
+});
 
 function playSurah(e, num) {
     if (e) e.stopPropagation();
@@ -436,12 +746,7 @@ function playSurah(e, num) {
     const reciter = state.quran.reciters.find(r => r.id === state.quran.selectedReciter) || state.quran.reciters[0];
     
     const server = reciter.server.endsWith('/') ? reciter.server : reciter.server + '/';
-    let url = '';
-    if (reciter.id.startsWith('quran-com')) {
-        url = `${server}${num}.mp3`;
-    } else {
-        url = `${server}${String(num).padStart(3, '0')}.mp3`;
-    }
+    let url = `${server}${String(num).padStart(3, '0')}.mp3`;
 
     startAudio(url, surah.name, reciter.name);
 }
@@ -539,9 +844,21 @@ function renderRadios() {
     const list = document.getElementById('radio-list');
     const query = document.getElementById('radio-search').value.toLowerCase();
     
+    let baseFiltered = state.radios;
+    if (showingRadioFavs) {
+        baseFiltered = baseFiltered.filter(r => state.favorites.radios.includes(r.url));
+        // Ignore category if showing favorites, just show them all
+        const filtered = baseFiltered.filter(r => r.name.toLowerCase().includes(query));
+        list.innerHTML = filtered.length > 0
+            ? filtered.map(r => renderSingleRadio(r)).join('')
+            : '<p class="col-span-full text-center opacity-50 p-10 font-bold">لا توجد إذاعات في المفضلة</p>';
+        lucide.createIcons();
+        return;
+    }
+    
     if (state.activeRadioCat === 'misc') {
-        const filtered = state.radios.filter(r => r.category === 'misc' && r.name.toLowerCase().includes(query));
-        const groups = {};
+        const filtered = baseFiltered.filter(r => r.category === 'misc' && r.name.toLowerCase().includes(query));
+        let groups = {};
         for (const r of filtered) {
            const sc = r.subCat || 'أخرى';
            if (!groups[sc]) groups[sc] = [];
@@ -558,12 +875,28 @@ function renderRadios() {
         }
         list.innerHTML = html;
     } else {
-        const filtered = state.radios.filter(r => r.category === state.activeRadioCat && r.name.toLowerCase().includes(query));
+        const filtered = baseFiltered.filter(r => r.category === state.activeRadioCat && r.name.toLowerCase().includes(query));
         list.innerHTML = filtered.length > 0 
             ? filtered.slice(0, 50).map(r => renderSingleRadio(r)).join('')
             : '<p class="col-span-full text-center opacity-50 p-10 font-bold">لا توجد نتائج</p>';
     }
     lucide.createIcons();
+}
+
+function toggleRadioFavoritesOnly() {
+    showingRadioFavs = !showingRadioFavs;
+    const btn = document.getElementById('radio-fav-btn');
+    if (showingRadioFavs) {
+        btn.classList.add('bg-[#0A5239]', 'text-white');
+        btn.classList.remove('bg-white', 'text-[#0A5239]', 'dark:bg-[#16231C]', 'dark:text-[#D4AF37]');
+        btn.innerHTML = '<i data-lucide="heart" class="w-6 h-6 fill-white"></i>';
+    } else {
+        btn.classList.remove('bg-[#0A5239]', 'text-white');
+        btn.classList.add('bg-white', 'text-[#0A5239]', 'dark:bg-[#16231C]', 'dark:text-[#D4AF37]');
+        btn.innerHTML = '<i data-lucide="heart" class="w-6 h-6"></i>';
+    }
+    lucide.createIcons();
+    renderRadios();
 }
 
 function toggleFavoriteRadio(e, url) {
@@ -616,11 +949,11 @@ function renderAzkar() {
         const complete = current >= target;
 
         return `
-            <div class="premium-card p-10 flex flex-col ${complete ? 'opacity-40 grayscale scale-[0.98]' : ''} transition-all duration-500">
+            <div class="premium-card p-10 flex flex-col ${complete ? 'opacity-70 grayscale scale-[0.98]' : ''} transition-all duration-500">
                 <p class="text-3xl font-['Amiri'] leading-relaxed text-right mb-10 font-bold">${z.content}</p>
                 <div class="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-8">
                     <div class="text-right">
-                        <span class="text-[10px] opacity-40 font-black block mb-1 uppercase tracking-widest">التكرار</span>
+                        <span class="text-[10px] opacity-70 font-black block mb-1 uppercase tracking-widest">التكرار</span>
                         <div class="flex items-baseline gap-1">
                             <span class="font-black text-2xl text-[#0A5239]">${current}</span>
                             <span class="opacity-20 text-xs">/ ${target}</span>

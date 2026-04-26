@@ -4,7 +4,7 @@
     --primary-light: #137952;
     --accent: #D4AF37; /* Gold accent */
     --accent-glow: rgba(212, 175, 55, 0.4);
-    --bg-light: #FDFBF7; /* Warm paper/cream */
+    --bg-light: #F2F5F3; /* Light grayish green for better contrast with white cards */
     --bg-dark: #0B1310;
     --card-light: #FFFFFF;
     --card-dark: #121C17;
@@ -65,9 +65,9 @@ body {
 /* Premium Card Effects */
 .premium-card {
     background: var(--card-light);
-    border: 1px solid rgba(10, 82, 57, 0.1);
+    border: 1px solid rgba(10, 82, 57, 0.06);
     border-radius: 1.5rem;
-    box-shadow: 0 10px 40px -10px rgba(10, 82, 57, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 10px 30px -5px rgba(10, 82, 57, 0.06), 0 4px 6px -2px rgba(10, 82, 57, 0.03);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
@@ -79,7 +79,7 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -91,17 +91,19 @@ body {
 
 .dark .premium-card {
     background: var(--card-dark);
-    border-color: rgba(212, 175, 55, 0.15);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-color: rgba(212, 175, 55, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .premium-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 20px 40px -10px rgba(10, 82, 57, 0.1), 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 20px 40px -10px rgba(10, 82, 57, 0.12), 0 8px 16px -4px rgba(10, 82, 57, 0.06);
+    border-color: rgba(10, 82, 57, 0.15);
 }
 
 .dark .premium-card:hover {
-    box-shadow: 0 15px 40px -10px rgba(212, 175, 55, 0.08); /* gold glow */
+    box-shadow: 0 15px 40px -10px rgba(212, 175, 55, 0.12); /* gold glow */
+    border-color: rgba(212, 175, 55, 0.2);
 }
 
 /* Nav Pill Style */
